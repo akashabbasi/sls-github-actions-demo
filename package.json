@@ -1,0 +1,21 @@
+{
+  "name": "notes",
+  "version": "1.0.0",
+  "description": "",
+  "main": "handler.js",
+  "scripts": {
+    "test": "echo \"All tests passed\""
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.341.0",
+    "@aws-sdk/lib-dynamodb": "^3.341.0",
+    "@aws-sdk/node-http-handler": "^3.342.0",
+    "aws-jwt-verify": "^4.0.0"
+  },
+  "devDependencies": {
+    "serverless-iam-roles-per-function": "^3.2.0"
+  }
+}

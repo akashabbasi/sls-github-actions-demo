@@ -1,0 +1,96 @@
+service: notes-api
+frameworkVersion: "3"
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  stage: ${opt:stage, 'dev'}
+  region: us-east-1
+
+functions:
+  authorizer:
+    handler: authorizer.handler
+    environment:
+      COGNITO_USERPOOL_ID: !Ref cognitoUserPool
+      COGNITO_WEB_CLIENT_ID: !Ref cognitoUserPoolWebClient
+  createNote:
+    handler: handler.createNote
+    environment:
+      NOTES_TABLE_NAME: !Ref notesTable
+      AWS_NODEJS_CONNECTION_REUSE_ENABLED: 1
+    events:
+      - http:
+          path: /notes
+          method: post
+          authorizer: authorizer
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - dynamodb:PutItem
+        Resource:
+          Fn::GetAtt:
+            - notesTable
+            - Arn
+  updateNote:
+    handler: handler.updateNote
+    environment:
+      NOTES_TABLE_NAME: !Ref notesTable
+      AWS_NODEJS_CONNECTION_REUSE_ENABLED: 1
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - dynamodb:UpdateItem
+        Resource:
+          Fn::GetAtt:
+            - notesTable
+            - Arn
+    events:
+      - http:
+          method: put
+          path: /notes/{id}
+          authorizer: authorizer
+          request:
+            parameters:
+              paths:
+                id: true
+  deleteNote:
+    handler: handler.deleteNote
+    iamRoleStatements:
+      - Effect: Allow
+        Action: dynamodb:DeleteItem
+        Resource: !GetAtt notesTable.Arn
+    environment:
+      NOTES_TABLE_NAME: !Ref notesTable
+      AWS_NODEJS_CONNECTION_REUSE_ENABLED: 1
+    events:
+      - http:
+          method: delete
+          path: /notes/{id}
+          authorizer: authorizer
+          request:
+            parameters:
+              paths:
+                id: true
+  getAllNotes:
+    handler: handler.getAllNotes
+    iamRoleStatements:
+      - Effect: Allow
+        Action: dynamodb:Scan
+        Resource: !GetAtt notesTable.Arn
+    environment:
+      NOTES_TABLE_NAME: !Ref notesTable
+      AWS_NODEJS_CONNECTION_REUSE_ENABLED: 1
+    events:
+      - http:
+          method: get
+          path: /notes
+          authorizer:
+            name: userpool_authorizer
+            type: COGNITO_USER_POOLS
+            arn: !GetAtt cognitoUserPool.Arn
+
+plugins:
+  - serverless-iam-roles-per-function
+
+resources:
+  Resources: ${file(resources.yml)}
